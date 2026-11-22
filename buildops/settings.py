@@ -26,13 +26,19 @@ SECRET_KEY = 'django-insecure-%arb56av9#bo&e-tr-t^h23*7wgyj-kh_cq2+*nzojiu*fp^46
 
 DEBUG = True
 
+# ALLOWED_HOSTS = [
+#     "localhost",
+#     "127.0.0.1",
+#     ".devtunnels.ms",  # Allows any active Microsoft Dev Tunnel
+# ]
+
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
-    ".devtunnels.ms",  # Allows any active Microsoft Dev Tunnel
+    ".devtunnels.ms",
+    "buildoperationssystem-1.onrender.com",
+    ".onrender.com",
 ]
-
-
 # ============================================================
 # AI
 # ============================================================
