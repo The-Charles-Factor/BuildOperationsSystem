@@ -110,6 +110,9 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://buildopss-git-main-charlesdevs-projects.vercel.app",
+    "https://buildopss-xf6olh69s-charlesdevs-projects.vercel.app",
+    # Replace or add your primary production Vercel URL here
 ]
 CORS_ALLOWED_ORIGIN_REGEXES = [r"^https://.*\.devtunnels\.ms$"]
 CORS_ALLOW_CREDENTIALS = True
@@ -117,6 +120,9 @@ CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
     "https://*.devtunnels.ms",
     "http://localhost:3000",
+    "https://buildopss-git-main-charlesdevs-projects.vercel.app",
+    "https://buildopss-xf6olh69s-charlesdevs-projects.vercel.app",
+    # Replace or add your primary production Vercel URL here
 ]
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -124,6 +130,7 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 # Only needed if you rely on session cookies across different origins:
 SESSION_COOKIE_SAMESITE = "None"
 CSRF_COOKIE_SAMESITE = "None"
+
 # ============================================================
 # URL / TEMPLATES
 # ============================================================
