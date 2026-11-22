@@ -1,10 +1,13 @@
+import logging
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
-import logging
 
-from receipts.services import generate_receipt_for_sale
+from receipts.services import (
+    generate_receipt_for_sale,
+    revoke_receipt_for_sale,
+)
 
 from core.tenant import (
     MultipleOrganizationsError,
@@ -54,6 +57,20 @@ class OrganizationScopedMixin:
             )
 
 
+def _serialize_receipt(receipt):
+    if receipt is None:
+        return None
+    return {
+        "id": receipt.id,
+        "receipt_number": receipt.receipt_number,
+        "is_printed": receipt.is_printed,
+        "print_attempts": receipt.print_attempts,
+        "last_printed_at": receipt.last_printed_at,
+        "is_revoked": getattr(receipt, "is_revoked", False),
+        "receipt_payload": receipt.receipt_payload,
+    }
+
+
 class SaleViewSet(
     OrganizationScopedMixin,
     viewsets.ModelViewSet,
@@ -91,10 +108,23 @@ class SaleViewSet(
                 "You cannot create a sale for a customer from another organization."
             )
 
-        serializer.save(
+        sale = serializer.save(
             organization=organization,
             created_by=self.request.user,
         )
+
+        # If a sale is created directly in 'completed' status, generate its receipt immediately.
+        if (sale.status or "").strip().lower() == "completed":
+            try:
+                generate_receipt_for_sale(
+                    sale_instance=sale,
+                    user=self.request.user,
+                )
+            except Exception:
+                logger.exception(
+                    "Failed to generate receipt on create for sale %s",
+                    sale.pk,
+                )
 
     def perform_update(self, serializer):
         organization = self.get_current_organization()
@@ -114,7 +144,19 @@ class SaleViewSet(
                 "You cannot assign a customer from another organization."
             )
 
-        serializer.save()
+        updated_sale = serializer.save()
+
+        if (updated_sale.status or "").strip().lower() == "completed":
+            try:
+                generate_receipt_for_sale(
+                    sale_instance=updated_sale,
+                    user=self.request.user,
+                )
+            except Exception:
+                logger.exception(
+                    "Failed to generate receipt on update for sale %s",
+                    updated_sale.pk,
+                )
 
     @action(
         detail=True,
@@ -123,12 +165,13 @@ class SaleViewSet(
     )
     def complete(self, request, pk=None):
         sale = self.get_object()
+        organization = self.get_current_organization()
 
         # 1. Complete the sale using your existing domain service
         sale = complete_sale(
             sale=sale,
             user=request.user,
-            organization=self.get_current_organization(),
+            organization=organization,
         )
 
         # 2. Automatically generate and freeze the immutable digital receipt
@@ -144,14 +187,7 @@ class SaleViewSet(
         ).data
 
         # 4. Attach complete receipt info and frozen payload for the frontend modal
-        response_data["receipt"] = {
-            "id": receipt.id,
-            "receipt_number": receipt.receipt_number,
-            "is_printed": receipt.is_printed,
-            "print_attempts": receipt.print_attempts,
-            "last_printed_at": receipt.last_printed_at,
-            "receipt_payload": receipt.receipt_payload,
-        }
+        response_data["receipt"] = _serialize_receipt(receipt)
 
         return Response(
             response_data,
@@ -439,6 +475,7 @@ class SaleRefundViewSet(
             )
         )
 
+
 class SaleReturnViewSet(
     OrganizationScopedMixin,
     viewsets.ModelViewSet,
@@ -605,6 +642,7 @@ class SaleReturnViewSet(
             ).data,
             status=status.HTTP_200_OK,
         )
+
 
 class SaleReturnItemViewSet(
     OrganizationScopedMixin,
