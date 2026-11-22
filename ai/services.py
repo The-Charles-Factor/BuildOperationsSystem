@@ -1,3 +1,4 @@
+import logging
 from django.utils import timezone
 
 from core.tenant import (
@@ -6,10 +7,12 @@ from core.tenant import (
 
 from ai.providers.base import AIProvider
 from ai.tools.registry import (
+    can_use_tool,
     get_tool,
     get_tools_for_user,
 )
 
+logger = logging.getLogger(__name__)
 
 MAX_QUESTION_LENGTH = 4000
 
@@ -81,15 +84,14 @@ class AIService:
         if organization is None:
             organization = self.get_organization(user)
 
-        parameters = dict(parameters or {})
-
-        # Never permit a caller/model to choose the tenant.
-        parameters.pop("organization", None)
-        parameters.pop("organization_id", None)
+        clean_parameters = {
+            k: v
+            for k, v in dict(parameters or {}).items()
+            if k not in {"organization", "organization_id", "user"}
+            and not isinstance(v, bool)
+        }
 
         tool = get_tool(tool_name)
-
-        from ai.tools.registry import can_use_tool
 
         if not can_use_tool(
             user,
@@ -101,10 +103,22 @@ class AIService:
                 f"the '{tool_name}' tool."
             )
 
-        return tool["function"](
-            organization=organization,
-            **parameters,
-        )
+        try:
+            return tool["function"](
+                organization=organization,
+                **clean_parameters,
+            )
+        except AttributeError as exc:
+            if "resolve_expression" in str(exc):
+                logger.exception(
+                    "Invalid ORM expression in AI tool '%s' for org %s",
+                    tool_name,
+                    organization.id,
+                )
+                raise RuntimeError(
+                    f"Query expression error while running '{tool_name}'."
+                ) from exc
+            raise
 
     def build_context(
         self,
@@ -119,7 +133,7 @@ class AIService:
         user's membership, never from the user's question.
         """
 
-        context = context or {}
+        extra_context = dict(context or {})
 
         if user is not None:
             if organization is None:
@@ -162,7 +176,7 @@ class AIService:
                 ),
             }
 
-        business_context.update(context)
+        business_context.update(extra_context)
 
         return business_context
 
@@ -208,7 +222,7 @@ class AIService:
                 f"Maximum length is {MAX_QUESTION_LENGTH} characters."
             )
 
-        context = self.build_context(
+        built_context = self.build_context(
             user=user,
             organization=organization,
             context=context,
@@ -216,7 +230,7 @@ class AIService:
 
         return self.provider.generate(
             question=question,
-            context=context,
+            context=built_context,
             user=user,
             organization=organization,
         )
