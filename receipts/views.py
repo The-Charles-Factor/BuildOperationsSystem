@@ -1,22 +1,26 @@
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.models import Organization
+from core.tenant import (
+    MultipleOrganizationsError,
+    NoOrganizationError,
+    get_current_organization,
+)
+from sales.models import Sale
 from .models import Receipt
+from .services import generate_receipt_for_sale
 
 
 def get_request_organization(request):
-    org = getattr(request, "organization", None)
-    if org:
-        return org
-    profile = getattr(request.user, "profile", None)
-    if profile and getattr(profile, "organization", None):
-        return profile.organization
-    return Organization.objects.first()
+    try:
+        return get_current_organization(request.user)
+    except (NoOrganizationError, MultipleOrganizationsError) as exc:
+        raise PermissionDenied(str(exc))
 
 
 def serialize_receipt(receipt: Receipt) -> dict:
@@ -43,11 +47,24 @@ class ReceiptListView(APIView):
 
     def get(self, request):
         organization = get_request_organization(request)
-        qs = Receipt.objects.select_related("transaction", "organization").order_by(
-            "-created_at"
+
+        # Backfill receipts for any completed/returned sales in this org that lack one
+        completed_sales = Sale.objects.filter(
+            organization=organization,
+            status__in=["completed", "returned"],
+            sale_receipt__isnull=True,
         )
-        if organization is not None:
-            qs = qs.filter(organization=organization)
+        for sale in completed_sales:
+            generate_receipt_for_sale(
+                sale_instance=sale,
+                user=sale.created_by or request.user,
+            )
+
+        qs = (
+            Receipt.objects.select_related("transaction", "organization")
+            .filter(organization=organization)
+            .order_by("-created_at")
+        )
         return Response([serialize_receipt(r) for r in qs])
 
 
@@ -56,11 +73,11 @@ class MarkReceiptPrintedView(APIView):
 
     def post(self, request, receipt_number):
         organization = get_request_organization(request)
-        filters = {"receipt_number": receipt_number}
-        if organization is not None:
-            filters["organization"] = organization
-
-        receipt = get_object_or_404(Receipt, **filters)
+        receipt = get_object_or_404(
+            Receipt,
+            receipt_number=receipt_number,
+            organization=organization,
+        )
 
         if getattr(receipt, "is_revoked", False):
             return Response(
