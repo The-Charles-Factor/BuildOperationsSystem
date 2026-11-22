@@ -104,25 +104,29 @@ MIDDLEWARE = [
 
 
 # ============================================================
-# CORS
+# CORS & CSRF
 # ============================================================
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://buildopss-git-main-charlesdevs-projects.vercel.app",
-    "https://buildopss-xf6olh69s-charlesdevs-projects.vercel.app",
-    # Replace or add your primary production Vercel URL here
+    "https://buildopss.vercel.app",
+    "https://buildopss-nwjzsu73p-charlesdevs-projects.vercel.app",
 ]
-CORS_ALLOWED_ORIGIN_REGEXES = [r"^https://.*\.devtunnels\.ms$"]
+
+# Matches all Vercel preview & deployment URLs for buildopss
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.devtunnels\.ms$",
+    r"^https://buildopss(-[a-zA-Z0-9-]+)?\.vercel\.app$",
+]
+
 CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://*.devtunnels.ms",
     "http://localhost:3000",
-    "https://buildopss-git-main-charlesdevs-projects.vercel.app",
-    "https://buildopss-xf6olh69s-charlesdevs-projects.vercel.app",
-    # Replace or add your primary production Vercel URL here
+    "https://*.devtunnels.ms",
+    "https://buildopss.vercel.app",
+    "https://*.vercel.app",
 ]
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
