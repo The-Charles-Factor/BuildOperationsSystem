@@ -169,17 +169,18 @@ WSGI_APPLICATION = "buildops.wsgi.application"
 # DATABASE
 # ============================================================
 
+import os
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "buildops",
-        "USER": "postgres",
-        "PASSWORD": "your_password_here",
-        "HOST": "localhost",
-        "PORT": "5432",
+        "NAME": os.environ.get("DB_NAME", "buildops"),
+        "USER": os.environ.get("DB_USER", "postgres"),
+        "PASSWORD": os.environ.get("DB_PASSWORD", "QIAcckWkqPrwK49eBuqdeMK4SJhYivTe"),
+        "HOST": os.environ.get("DB_HOST", "localhost"),
+        "PORT": os.environ.get("DB_PORT", "5432"),
     }
-}
-
+}   
 
 # ============================================================
 # PASSWORD VALIDATION
