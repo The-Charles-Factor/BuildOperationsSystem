@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from django.db.models import Count, DecimalField, F, Sum
+from django.db.models import Count, DecimalField, F, Q, Sum
 from django.db.models.functions import Coalesce
 from django.utils.dateparse import parse_date
 
@@ -59,7 +59,7 @@ def get_expenses_summary(
         paid_amount=Coalesce(
             Sum(
                 "amount",
-                filter=F("status") == "paid",
+                filter=Q(status="paid"),
             ),
             _zero_decimal(),
             output_field=DecimalField(max_digits=14, decimal_places=2),
