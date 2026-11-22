@@ -1,0 +1,171 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────────────────────
+   BuildOps — Deep Forest Intelligence
+   Design tokens. Single source of truth for the entire app.
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* Forest foundation — sidebar, dark surfaces */
+  --forest-950: #06140d;
+  --forest-900: #0a1f14;
+  --forest-800: #0f2e1d;
+  --forest-700: #143d27;
+  --forest-600: #1a4d33;
+
+  /* Emerald identity — brand, primary action, active states */
+  --emerald-700: #0d5c3a;
+  --emerald-600: #107a4c;
+  --emerald-500: #12945c;
+  --emerald-400: #22b573;
+  --emerald-300: #4ecf94;
+  --emerald-200: #a7e8c6;
+  --emerald-100: #dcf5e8;
+  --emerald-50:  #f0faf4;
+
+  /* Neutral workspace */
+  --workspace:   #f7f8f7;
+  --surface:     #ffffff;
+  --border:      #e5e8e6;
+  --border-soft: #eef0ee;
+
+  --charcoal-900: #0f1412;
+  --charcoal-700: #2b3330;
+  --charcoal-500: #5a635f;
+  --charcoal-400: #8b938f;
+  --charcoal-300: #b7bdb9;
+
+  /* Semantic — warnings and errors only */
+  --warning:       #b45309;
+  --warning-bg:    #fef3c7;
+  --warning-border:#fde68a;
+  --danger:        #b91c1c;
+  --danger-bg:     #fee2e2;
+  --danger-border: #fecaca;
+
+  /* Rhythm */
+  --radius-sm: 6px;
+  --radius:    8px;
+  --radius-lg: 12px;
+
+  /* Elevation */
+  --shadow-card: 0 1px 2px rgba(15, 20, 18, 0.04);
+  --shadow-pop:  0 4px 16px rgba(15, 20, 18, 0.08);
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    border-color: var(--border);
+  }
+
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: clip;
+    background: var(--workspace);
+    color: var(--charcoal-700);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
+    color: var(--charcoal-900);
+    letter-spacing: -0.011em;
+    font-weight: 600;
+  }
+
+  /* Tabular numbers everywhere data lives */
+  table,
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Utility classes — small, deliberate, reusable
+   ───────────────────────────────────────────────────────────── */
+
+@layer components {
+  .bo-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+  }
+
+  .bo-hairline {
+    border-color: var(--border-soft);
+  }
+
+  /* Smooth, short, never decorative */
+  .bo-transition {
+    transition: background-color 150ms ease, border-color 150ms ease,
+      color 150ms ease, box-shadow 150ms ease;
+  }
+}
+
+/* Custom scrollbar — subtle, industrial */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 8px;
+  border: 2px solid var(--workspace);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--charcoal-300);
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .thermal-receipt,
+  .thermal-receipt * {
+    visibility: visible;
+  }
+
+  .thermal-receipt {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    max-width: 100%;
+    margin: 0;
+    padding: 4mm;
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11px;
+    line-height: 1.35;
+    box-shadow: none !important;
+    border: none !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}
